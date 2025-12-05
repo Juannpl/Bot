@@ -9,32 +9,34 @@ jobs:
     runs-on: self-hosted
 
     steps:
+      # 1️⃣ Checkout code
       - name: Checkout latest code
         uses: actions/checkout@v4
 
-      - name: Sync project to VM
+      # 2️⃣ Build Docker image avec les variables d'environnement depuis les secrets
+      - name: Build Docker image
         run: |
-          rsync -av --delete ./ /home/ubuntu/Bot/
+          docker build \
+            --build-arg GUILD_ID=${{ secrets.GUILD_ID }} \
+            --build-arg DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }} \
+            --build-arg APEX_API_KEY=${{ secrets.APEX_API_KEY }} \
+            -t bot_apex:latest .
 
-      - name: Ensure venv exists
+      # 3️⃣ Stop et supprimer l'ancien container s'il existe
+      - name: Stop previous container
         run: |
-          cd /home/ubuntu/Bot
-          if [ ! -d "venv" ]; then
-            echo "Creating venv..."
-            python3 -m venv venv
-          else
-            echo "venv already exists."
-          fi
+          docker stop bot_apex || true
+          docker rm bot_apex || true
 
-      - name: Install dependencies
+      # 4️⃣ Run le nouveau container
+      - name: Run new container
         run: |
-          cd /home/ubuntu/Bot
-          source venv/bin/activate
-          pip install -r requirements.txt
+          docker run -d --name bot_apex \
+            -e GUILD_ID=${{ secrets.GUILD_ID }} \
+            -e DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }} \
+            -e APEX_API_KEY=${{ secrets.APEX_API_KEY }} \
+            bot_apex:latest
 
-      - name: Starting python3 bot_apex.py
-        run: |
-          python3 ./bot_apex.py
-
+      # 5️⃣ Fin
       - name: Finished
         run: echo "Deployment and bot execution completed."
