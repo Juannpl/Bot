@@ -158,7 +158,65 @@ async def statapex(interaction: discord.Interaction, platform: app_commands.Choi
         print(f"🎯 Embed envoyé pour {apex_real_name}")
 
     except KeyError:
-        await interaction.followup.send("Impossible de récupérer le pseudo Apex.", ephemeral=True)
+        # ---- Fallback vers lil2-gateway API ----
+        fallback_url = f"https://lil2-gateway.apexlegendsstatus.com/gateway.php?qt=stats&userName={player_name}&userPlatform={platform_val}"
+
+        try:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+                async with session.get(fallback_url) as r:
+                    if r.status != 200:
+                        await interaction.followup.send("Impossible de trouver le joueur sur l'API principale ou de secours.", ephemeral=True)
+                        return
+                    fallback_data = await r.json()
+        except Exception as e:
+            await interaction.followup.send(f"Erreur API secondaire : {e}", ephemeral=True)
+            return
+
+        # Si lil2 renvoie aussi une erreur
+        if "Error" in fallback_data.get("statsAPI", {}):
+            await interaction.followup.send("Joueur introuvable sur les deux API.", ephemeral=True)
+            return
+
+        # ---- Extraire les données fallback ----
+        stats = fallback_data["statsAPI"]["global"]
+        apex_real_name = stats.get("name", player_name)
+        level = stats.get("level", "N/A")
+        rank_name = stats.get("rank", {}).get("rankName", "N/A")
+        rank_div = stats.get("rank", {}).get("rankDiv", "N/A")
+
+        # ----- Déterminer le main via lil2 gateway -----
+        all_legends = fallback_data["legends"]["all"]
+
+        found_main = None
+        most_kills = -1
+
+        for legend_name, legend_info in all_legends.items():
+            kills = legend_info.get("data", [{}])[0].get("value", 0)
+            if kills > most_kills:
+                most_kills = kills
+                found_main = legend_name
+
+        # Si toutes les légendes ont 0 kills → aucun main
+        if most_kills <= 0:
+            found_main = None
+
+        # ---- Création de l'embed fallback ----
+        embed = discord.Embed(
+            title=f"{apex_real_name} (Fallback API)",
+            color=discord.Color.orange()
+        )
+        embed.add_field(name="Level", value=level, inline=True)
+        embed.add_field(
+            name="Rank", value=f"{rank_name} {rank_div}", inline=True)
+
+        if found_main:
+            embed.add_field(
+                name="Main Legend", value=f"**{found_main}** (Kills inconnus)", inline=False)
+        else:
+            embed.add_field(
+                name="Main Legend", value="Aucune donnée (pas de trackers équipés)", inline=False)
+
+        await interaction.followup.send(embed=embed, ephemeral=True)
         return
 
     # ----- Renommage -----

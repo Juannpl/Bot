@@ -36,7 +36,7 @@ def get_most_played_legend(legends_data: dict):
 
                 break  # on ne regarde pas le reste
 
-    if best_legend is None:
+    if best_legend is None or best_kills <= 0:
         return None
 
     return {
