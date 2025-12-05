@@ -6,6 +6,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from apex_utils import get_most_played_legend
 
+
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 GUILD_ID = int(os.getenv("GUILD_ID"))
