@@ -16,7 +16,7 @@ jobs:
       # 2️⃣ Build Docker image avec les variables d'environnement depuis les secrets
       - name: Build Docker image
         run: |
-          docker build \
+          sudo docker build \
             --build-arg GUILD_ID=${{ secrets.GUILD_ID }} \
             --build-arg DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }} \
             --build-arg APEX_API_KEY=${{ secrets.APEX_API_KEY }} \
@@ -25,13 +25,13 @@ jobs:
       # 3️⃣ Stop et supprimer l'ancien container s'il existe
       - name: Stop previous container
         run: |
-          docker stop bot_apex || true
-          docker rm bot_apex || true
+          sudo docker stop bot_apex || true
+          sudo docker rm bot_apex || true
 
       # 4️⃣ Run le nouveau container
       - name: Run new container
         run: |
-          docker run -d --name bot_apex \
+          sudo docker run -d --name bot_apex \
             -e GUILD_ID=${{ secrets.GUILD_ID }} \
             -e DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }} \
             -e APEX_API_KEY=${{ secrets.APEX_API_KEY }} \
