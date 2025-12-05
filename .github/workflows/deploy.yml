@@ -32,11 +32,9 @@ jobs:
           source venv/bin/activate
           pip install -r requirements.txt
 
-      - name: Restart bot service
+      - name: Starting python3 bot_apex.py
         run: |
-          sudo systemctl restart apexbot
+          python3 ./bot_apex.py
 
-      - name: Check service status
-        run: |
-          sleep 2
-          sudo systemctl status apexbot --no-pager
+      - name: Finished
+        run: echo "Deployment and bot execution completed."
