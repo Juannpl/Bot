@@ -1,0 +1,32 @@
+name: CI/CD Bot Apex
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout latest code
+      uses: actions/checkout@v4
+
+    - name: Sync project to VM
+      run: |
+        rsync -av --delete ./ /home/ubuntu/Bot/
+
+    - name: Install dependencies
+      run: |
+        cd /home/ubuntu/Bot
+        source venv/bin/activate
+        pip install -r requirements.txt
+
+    - name: Reload systemd bot service
+      run: |
+        sudo systemctl restart apexbot
+
+    - name: Check service status
+      run: |
+        sleep 2
+        sudo systemctl status apexbot --no-pager
